@@ -1,6 +1,9 @@
 package kumex
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 // A CreateOrderResultModel represents the result of CreateOrder().
 type CreateOrderResultModel struct {
@@ -8,8 +11,8 @@ type CreateOrderResultModel struct {
 }
 
 // CreateOrder places a new order.
-func (as *ApiService) CreateOrder(params map[string]string) (*ApiResponse, error) {
-	req := NewRequest(http.MethodPost, "/api/v1/orders", params)
+func (as *ApiService) CreateOrder(ctx context.Context, params map[string]string) (*ApiResponse, error) {
+	req := NewRequestWithContext(ctx, http.MethodPost, "/api/v1/orders", params)
 	return as.Call(req)
 }
 
@@ -19,19 +22,19 @@ type CancelOrderResultModel struct {
 }
 
 // CancelOrder cancels a previously placed order.
-func (as *ApiService) CancelOrder(orderId string) (*ApiResponse, error) {
-	req := NewRequest(http.MethodDelete, "/api/v1/orders/"+orderId, nil)
+func (as *ApiService) CancelOrder(ctx context.Context, orderId string) (*ApiResponse, error) {
+	req := NewRequestWithContext(ctx, http.MethodDelete, "/api/v1/orders/"+orderId, nil)
 	return as.Call(req)
 }
 
 // CancelOrders cancels all orders of the symbol.
 // With best effort, cancel all open orders. The response is a list of ids of the canceled orders.
-func (as *ApiService) CancelOrders(symbol string) (*ApiResponse, error) {
+func (as *ApiService) CancelOrders(ctx context.Context, symbol string) (*ApiResponse, error) {
 	p := map[string]string{}
 	if symbol != "" {
 		p["symbol"] = symbol
 	}
-	req := NewRequest(http.MethodDelete, "/api/v1/orders", p)
+	req := NewRequestWithContext(ctx, http.MethodDelete, "/api/v1/orders", p)
 	return as.Call(req)
 }
 
@@ -58,25 +61,25 @@ func (as *ApiService) ObtainStopOrders(symbol string, page *PaginationParam) (*A
 
 // An OrderModel represents an order.
 type OrderModel struct {
-	Id             string `json:"id"`
-	Symbol         string `json:"symbol"`
-	Type           string `json:"type"`
-	Side           string `json:"side"`
-	Price          string `json:"price"`
-	Size           int64  `json:"size"`
-	Value          string `json:"value"`
-	DealValue      string `json:"dealValue"`
-	DealSize       int64  `json:"dealSize"`
-	Stp            string `json:"stp"`
-	Stop           string `json:"stop"`
-	StopPriceType  string `json:"stopPriceType"`
-	StopTriggered  bool   `json:"stopTriggered"`
-	StopPrice      string `json:"stopPrice"`
-	TimeInForce    string `json:"timeInForce"`
-	PostOnly       bool   `json:"postOnly"`
-	Hidden         bool   `json:"hidden"`
-	IceBerg        bool   `json:"iceberg"`
-	VisibleSize    string `json:"visibleSize"`
+	Id            string `json:"id"`
+	Symbol        string `json:"symbol"`
+	Type          string `json:"type"`
+	Side          string `json:"side"`
+	Price         string `json:"price"`
+	Size          int64  `json:"size"`
+	Value         string `json:"value"`
+	DealValue     string `json:"dealValue"`
+	DealSize      int64  `json:"dealSize"`
+	Stp           string `json:"stp"`
+	Stop          string `json:"stop"`
+	StopPriceType string `json:"stopPriceType"`
+	StopTriggered bool   `json:"stopTriggered"`
+	StopPrice     string `json:"stopPrice"`
+	TimeInForce   string `json:"timeInForce"`
+	PostOnly      bool   `json:"postOnly"`
+	Hidden        bool   `json:"hidden"`
+	IceBerg       bool   `json:"iceberg"`
+	// VisibleSize    string `json:"visibleSize"` // comment out for kc v2
 	Leverage       string `json:"leverage"`
 	ForceHold      bool   `json:"forceHold"`
 	CloseOrder     bool   `json:"closeOrder"`
@@ -95,21 +98,21 @@ type OrderModel struct {
 type OrdersModel []*OrderModel
 
 // Orders returns a list your current orders.
-func (as *ApiService) Orders(params map[string]string, pagination *PaginationParam) (*ApiResponse, error) {
+func (as *ApiService) Orders(ctx context.Context, params map[string]string, pagination *PaginationParam) (*ApiResponse, error) {
 	pagination.ReadParam(params)
-	req := NewRequest(http.MethodGet, "/api/v1/orders", params)
+	req := NewRequestWithContext(ctx, http.MethodGet, "/api/v1/orders", params)
 	return as.Call(req)
 }
 
 // Order returns a single order by order id.
-func (as *ApiService) Order(orderId string) (*ApiResponse, error) {
-	req := NewRequest(http.MethodGet, "/api/v1/orders/"+orderId, nil)
+func (as *ApiService) Order(ctx context.Context, orderId string) (*ApiResponse, error) {
+	req := NewRequestWithContext(ctx, http.MethodGet, "/api/v1/orders/"+orderId, nil)
 	return as.Call(req)
 }
 
 // Order returns a single order by client Oid.
-func (as *ApiService) OrderByClientOid(clientOid string) (*ApiResponse, error) {
-	req := NewRequest(http.MethodGet, "/api/v1/orders/byClientOid?clientOid="+clientOid, nil)
+func (as *ApiService) OrderByClientOid(ctx context.Context, clientOid string) (*ApiResponse, error) {
+	req := NewRequestWithContext(ctx, http.MethodGet, "/api/v1/orders/byClientOid?clientOid="+clientOid, nil)
 	return as.Call(req)
 }
 
@@ -123,7 +126,9 @@ func (as *ApiService) RecentDoneOrders(symbol string) (*ApiResponse, error) {
 }
 
 // CancelOrderClientId  cancel order with order client id
-func (as *ApiService) CancelOrderClientId(clientOid string) (*ApiResponse, error) {
-	req := NewRequest(http.MethodGet, "/api/v1/orders/client-order/"+clientOid, nil)
+func (as *ApiService) CancelOrderClientId(ctx context.Context, symbol string, clientOid string) (*ApiResponse, error) {
+	req := NewRequestWithContext(ctx, http.MethodDelete, "/api/v1/orders/client-order/"+clientOid, map[string]string{
+		"symbol": symbol,
+	})
 	return as.Call(req)
 }

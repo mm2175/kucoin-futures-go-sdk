@@ -2,6 +2,7 @@ package kumex
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -29,6 +30,14 @@ type Request struct {
 	Header        http.Header
 	Timeout       time.Duration
 	SkipVerifyTls bool
+
+	ctx context.Context
+}
+
+func NewRequestWithContext(ctx context.Context, method, path string, params map[string]string) *Request {
+	r := NewRequest(method, path, params)
+	r.ctx = ctx
+	return r
 }
 
 // NewRequest creates a instance of Request.
@@ -108,6 +117,10 @@ func (r *Request) HttpRequest() (*http.Request, error) {
 		return nil, err
 	}
 
+	if r.ctx != nil {
+		req = req.WithContext(r.ctx)
+	}
+
 	for key, values := range r.Header {
 		for _, value := range values {
 			req.Header.Add(key, value)
@@ -175,6 +188,14 @@ type Response struct {
 	request *Request
 	*http.Response
 	body []byte
+}
+
+func NewResponse(req *Request, resp *http.Response, body []byte) *Response {
+	return &Response{
+		request:  req,
+		Response: resp,
+		body:     body,
+	}
 }
 
 // ReadBody read the response data, then return it.
@@ -273,6 +294,11 @@ func (ar *ApiResponse) ReadPaginationData(v interface{}) (*PaginationModel, erro
 	if err := ar.ReadData(p); err != nil {
 		return nil, err
 	}
+
+	if len(p.RawItems) == 0 {
+		return p, nil
+	}
+
 	if err := p.ReadItems(v); err != nil {
 		return p, err
 	}
